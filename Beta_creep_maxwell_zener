@@ -1,0 +1,45 @@
+%% ================================================================
+%  Creep nel modello di Maxwell–Zener
+%  Variazione di β: tre curve (blu, arancione, giallo)
+% ================================================================
+clear; close all; clc;
+
+%% Parametri base
+k0 = 10;
+k  = 5;
+sig0 = 1.0;    % sforzo imposto
+
+betas = [0.5 2 10];   % viscosità
+
+colors = lines(numel(betas));        % blu → arancione → giallo
+styles = {'-','--',':'};             % continua, tratteggiata, puntinata
+
+%% Tempo
+tmax = 10;
+t = linspace(0,tmax,1000);
+
+fig = figure('Color','w'); hold on; grid on;
+title('Creep: variazione della deformazione $\varepsilon(t)$ al variare di $\beta$', ...
+      'Interpreter','latex');
+xlabel('$t$','Interpreter','latex','FontSize',14);
+ylabel('$\varepsilon(t)$','Interpreter','latex','FontSize',14);
+xlim([-0.1,10]);
+ylim([0.065,0.105]);
+
+for i = 1:numel(betas)
+    beta = betas(i);
+
+    % tempo caratteristico di creep
+    tau_c = beta * (k0 + k) / (k0 * k);
+
+    % soluzione analitica del creep
+    eps_t = (sig0/k0) * (1 - (k/(k0+k))*exp(-t/tau_c));
+
+    plot(t, eps_t, ...
+        'Color', colors(i,:), ...
+        'LineStyle', styles{i}, ...
+        'LineWidth', 1.8, ...
+        'DisplayName', sprintf('$\\beta = %.1f$', beta));
+end
+
+legend('Interpreter','latex','Location','best');

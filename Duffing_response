@@ -1,0 +1,95 @@
+%% ================================================================
+%  APPENDICE E: Risposta in frequenza per oscillatori non lineari
+%  Confronto: Lineare vs Hardening vs Softening (Metodo Duffing)
+% ================================================================
+clear; close all; clc;
+
+%% ----------------- PARAMETRI FISICI -----------------------------
+m  = 1.0;
+k  = 5.0;
+F0 = 1.0;
+
+% Parametri di non-linearità (alpha) per i tre casi
+% Potenziale U(x) = 1/2 k x^2 + 1/4 alpha x^4
+alphas = [0, 1.0, -0.5]; 
+
+% Etichette per la legenda
+labels = {'Lineare ($\alpha=0$)', ...
+          'Indurente ($\alpha=1$)', ...
+          'Rammollente ($\alpha=-0.5$)'};
+
+% Stili grafici coerenti con il grafico Python generato
+colors = {'k', 'r', 'b'};      % Nero, Rosso, Blu
+styles = {'--', '-', '-.'};    % Tratteggiata, Continua, Punto-linea
+
+%% ================================================================
+%  CALCOLO DELLE CURVE DI RISPOSTA (Metodo Inverso)
+%  Dall'equazione di Duffing (bilancio armonico):
+%  m*w^2 = k + 3/4*alpha*A^2 +/- F0/A
+%  Risolviamo per w in funzione dell'ampiezza A
+% ================================================================
+
+% Vettore delle ampiezze (variabile indipendente per il calcolo)
+A_vec = linspace(0.01, 3.5, 2000); 
+
+% Creazione della figura con il tuo stile standard
+figure('Color','w'); hold on; grid on;
+
+title('Risposta in frequenza per oscillatori con $U(x)$ non lineare', ...
+      'Interpreter','latex', 'FontSize', 14);
+xlabel('$\omega$ [rad/s]', 'Interpreter','latex', 'FontSize', 14);
+ylabel('Ampiezza $A$', 'Interpreter','latex', 'FontSize', 14);
+
+% Ciclo sui diversi valori di alpha
+for i = 1:length(alphas)
+    alpha = alphas(i);
+    
+    % Termine comune legato alla rigidezza (che ora dipende da A)
+    % k_eff(A) = k + 3/4 * alpha * A^2
+    term_stiffness = k + 0.75 * alpha * A_vec.^2;
+    
+    % Termine legato alla forzante normalizzata
+    term_force = F0 ./ A_vec;
+    
+    % Calcolo delle frequenze quadre per i due rami della curva di risonanza
+    % Ramo 1 (fase 0): m*w^2 = k_eff(A) - F0/A
+    w2_1 = (term_stiffness - term_force) / m;
+    
+    % Ramo 2 (fase pi): m*w^2 = k_eff(A) + F0/A
+    w2_2 = (term_stiffness + term_force) / m;
+    
+    % Filtriamo solo le soluzioni fisiche (w^2 > 0)
+    idx1 = w2_1 > 0;
+    idx2 = w2_2 > 0;
+    
+    % Plot del primo ramo
+    p = plot(sqrt(w2_1(idx1)), A_vec(idx1), ...
+        'Color', colors{i}, ...
+        'LineStyle', styles{i}, ...
+        'LineWidth', 1.8);
+    
+    % Plot del secondo ramo (senza aggiungere voce in legenda)
+    plot(sqrt(w2_2(idx2)), A_vec(idx2), ...
+        'Color', colors{i}, ...
+        'LineStyle', styles{i}, ...
+        'LineWidth', 1.8, ...
+        'HandleVisibility', 'off'); 
+    
+    % Assegnazione nome per la legenda al primo plot
+    p.DisplayName = labels{i};
+end
+
+% Aggiunta riferimento frequenza naturale lineare (omega_0)
+w0 = sqrt(k/m);
+xline(w0, ':k', '$\omega_0$', ...
+    'Interpreter','latex', ...
+    'LabelVerticalAlignment','bottom', ...
+    'FontSize', 12, 'HandleVisibility','off');
+
+% Impostazione limiti e legenda
+xlim([0 5]);
+ylim([0 3]);
+legend('Interpreter','latex', 'Location', 'best', 'FontSize', 12);
+
+% Salvataggio (opzionale)
+% saveas(gcf, 'duffing_response.png');
